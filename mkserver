@@ -119,7 +119,7 @@ fi
 # Source apache2 server configuration.
 [ -r $apache/etc/profile.d/init.sh ] || die 1 "$apache: no apache2 installation here"
 . $apache/etc/profile.d/init.sh
-[ X"$APACHE2_ROOT" = X ] && die 1 "$apache/etc/profile.d/init.sh did not set \$APACHE2_ROOT"
+[ X"$APACHE24_ROOT" = X ] && die 1 "$apache/etc/profile.d/init.sh did not set \$APACHE24_ROOT"
 
 # Generate new server configuration
 rm -fr $root/etc/env.d $root/htdocs || exit $?
@@ -127,7 +127,7 @@ mkdir -p $logdir $root/{var,htdocs,etc/env.d} || exit $?
 echo "$options" > $root/etc/options.txt
 
 (
- export APACHE2_ROOT
+ export APACHE24_ROOT
  export SERVER_ROOT="$root"
  export SERVER_NAME="$name"
  export USER="${user:+User $user}"
@@ -183,28 +183,32 @@ exit
 
 ######################################################################
 ### DEFMOD
-LoadModule authz_host_module @APACHE2_ROOT@/modules/mod_authz_host.so
-LoadModule auth_basic_module @APACHE2_ROOT@/modules/mod_auth_basic.so
-LoadModule ext_filter_module @APACHE2_ROOT@/modules/mod_ext_filter.so
-LoadModule filter_module @APACHE2_ROOT@/modules/mod_filter.so
-LoadModule deflate_module @APACHE2_ROOT@/modules/mod_deflate.so
-LoadModule log_config_module @APACHE2_ROOT@/modules/mod_log_config.so
-LoadModule logio_module @APACHE2_ROOT@/modules/mod_logio.so
-LoadModule env_module @APACHE2_ROOT@/modules/mod_env.so
-LoadModule mime_magic_module @APACHE2_ROOT@/modules/mod_mime_magic.so
-LoadModule expires_module @APACHE2_ROOT@/modules/mod_expires.so
-LoadModule headers_module @APACHE2_ROOT@/modules/mod_headers.so
-LoadModule setenvif_module @APACHE2_ROOT@/modules/mod_setenvif.so
-LoadModule proxy_module @APACHE2_ROOT@/modules/mod_proxy.so
-LoadModule proxy_http_module @APACHE2_ROOT@/modules/mod_proxy_http.so
-LoadModule ssl_module @APACHE2_ROOT@/modules/mod_ssl.so
-LoadModule mime_module @APACHE2_ROOT@/modules/mod_mime.so
-LoadModule asis_module @APACHE2_ROOT@/modules/mod_asis.so
-LoadModule cgi_module @APACHE2_ROOT@/modules/mod_cgi.so
-LoadModule negotiation_module @APACHE2_ROOT@/modules/mod_negotiation.so
-LoadModule dir_module @APACHE2_ROOT@/modules/mod_dir.so
-LoadModule alias_module @APACHE2_ROOT@/modules/mod_alias.so
-LoadModule rewrite_module @APACHE2_ROOT@/modules/mod_rewrite.so
+LoadModule socache_shmcb_module @APACHE24_ROOT@/modules/mod_socache_shmcb.so
+LoadModule access_compat_module @APACHE24_ROOT@/modules/mod_access_compat.so
+LoadModule unixd_module @APACHE24_ROOT@/modules/mod_unixd.so
+LoadModule authz_core_module @APACHE24_ROOT@/modules/mod_authz_core.so
+LoadModule authz_host_module @APACHE24_ROOT@/modules/mod_authz_host.so
+LoadModule auth_basic_module @APACHE24_ROOT@/modules/mod_auth_basic.so
+LoadModule ext_filter_module @APACHE24_ROOT@/modules/mod_ext_filter.so
+LoadModule filter_module @APACHE24_ROOT@/modules/mod_filter.so
+LoadModule deflate_module @APACHE24_ROOT@/modules/mod_deflate.so
+LoadModule log_config_module @APACHE24_ROOT@/modules/mod_log_config.so
+LoadModule logio_module @APACHE24_ROOT@/modules/mod_logio.so
+LoadModule env_module @APACHE24_ROOT@/modules/mod_env.so
+LoadModule mime_magic_module @APACHE24_ROOT@/modules/mod_mime_magic.so
+LoadModule expires_module @APACHE24_ROOT@/modules/mod_expires.so
+LoadModule headers_module @APACHE24_ROOT@/modules/mod_headers.so
+LoadModule setenvif_module @APACHE24_ROOT@/modules/mod_setenvif.so
+LoadModule proxy_module @APACHE24_ROOT@/modules/mod_proxy.so
+LoadModule proxy_http_module @APACHE24_ROOT@/modules/mod_proxy_http.so
+LoadModule ssl_module @APACHE24_ROOT@/modules/mod_ssl.so
+LoadModule mime_module @APACHE24_ROOT@/modules/mod_mime.so
+LoadModule asis_module @APACHE24_ROOT@/modules/mod_asis.so
+LoadModule cgi_module @APACHE24_ROOT@/modules/mod_cgi.so
+LoadModule negotiation_module @APACHE24_ROOT@/modules/mod_negotiation.so
+LoadModule dir_module @APACHE24_ROOT@/modules/mod_dir.so
+LoadModule alias_module @APACHE24_ROOT@/modules/mod_alias.so
+LoadModule rewrite_module @APACHE24_ROOT@/modules/mod_rewrite.so
 
 ######################################################################
 ### DEFMPM
@@ -221,11 +225,14 @@ ServerName @SERVER_NAME@
 ServerRoot "@SERVER_ROOT@"
 DocumentRoot "@SERVER_ROOT@/htdocs"
 PidFile @SERVER_ROOT@/var/httpd.pid
-@USER@
-@GROUP@
 
 # Dynamic modules.  Enable explicitly only the bits we need.
 @MODULES@
+
+<IfModule unixd_module>
+@USER@
+@GROUP@
+</IfModule>
 
 # Default to disallow everything.
 <Directory />
@@ -252,23 +259,22 @@ PidFile @SERVER_ROOT@/var/httpd.pid
 
 # Logging defaults.
 LogLevel warn
-ErrorLog "||@APACHE2_ROOT@/bin/rotatelogs -f @LOGDIR@/error_log_%Y%m%d.txt 86400"
-CustomLog "||@APACHE2_ROOT@/bin/rotatelogs -f @LOGDIR@/access_log_%Y%m%d.txt 86400" \
+ErrorLog "|@APACHE24_ROOT@/bin/rotatelogs -f @LOGDIR@/error_log_%Y%m%d.txt 86400"
+CustomLog "|@APACHE24_ROOT@/bin/rotatelogs -f @LOGDIR@/access_log_%Y%m%d.txt 86400" \
   "%t %v %a \"%r\" %>s [data: %I in %O out %b body %D us ] [auth: %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%{SSL_CLIENT_S_DN}x\" \"%{cms-auth}C\" ] [ref: \"%{Referer}i\" \"%{User-Agent}i\" ]"
   #RewriteLogLevel 3
   #RewriteLog @LOGDIR@/rewrite_log
 
 # Content and default index definitions.
 DirectoryIndex index.html
-DefaultType text/plain
-TypesConfig @APACHE2_ROOT@/conf/mime.types
+TypesConfig @APACHE24_ROOT@/conf/mime.types
 AddType application/x-compress .Z
 AddType application/x-gzip .gz .tgz
 
 # Basic SSL settings.  The rest are in virtual host definitions.
 SSLRandomSeed startup builtin
 SSLRandomSeed connect builtin
-SSLMutex file:@SERVER_ROOT@/var/ssl_mutex
+Mutex file:@SERVER_ROOT@/var
 SSLSessionCache shmcb:@SERVER_ROOT@/var/ssl_scache(512000) 
 SSLSessionCacheTimeout 300
 
@@ -326,7 +332,7 @@ OPTIONS="-f @SERVER_ROOT@/server.conf $(cat @SERVER_ROOT@/etc/options.txt)"
 
 # Path to the server binary, and short-form for messages.
 prog=httpd
-httpd=@APACHE2_ROOT@/bin/httpd
+httpd=@APACHE24_ROOT@/bin/httpd
 pidfile=@SERVER_ROOT@/var/httpd.pid
 lockfile=@SERVER_ROOT@/var/httpd.lock
 logfile=@LOGDIR@/start_stop.log
