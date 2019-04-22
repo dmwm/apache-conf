@@ -280,13 +280,16 @@ SSLSessionCacheTimeout 300
 # Various basic configurables.
 Timeout			300
 KeepAlive		On
-MaxKeepAliveRequests	100
+MaxKeepAliveRequests	1000
 KeepAliveTimeout	5
 UseCanonicalName	Off
 ServerTokens		Prod
 ServerSignature		Off
 HostnameLookups		Off
 TraceEnable		Off
+
+# Explicitly tell proxy to use chunked requets, required for CouchDB 1.6 and above
+SetEnv proxy-sendchunked 1
 
 # Now include actual server application containers.
 @CONFIGS@
